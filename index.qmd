@@ -1,0 +1,38 @@
+---
+title: "Residue Lisp with Numbers"
+authors:
+  - name: Connor Hanley
+    affiliation: Indiana University
+    roles: writing
+    corresponding: true
+bibliography: references.bib
+---
+
+## Introduction
+
+[Mind goes no longer more ghostly than the ghost]{.heading-subtitle}
+
+## Vector Symbolic Architectures
+
+[Structured neural networks]{.heading-subtitle}
+
+### Holographic Reduced Representations
+
+### Time-domain Residue Hyperdimensional Computing
+
+## The Language
+
+[LISP]{.heading-subtitle}
+
+## Encoding
+
+[Mapping sExprs to VSA]{.heading-subtitle}
+
+### Lists
+
+### Numbers
+
+## Interpretation
+
+[Evaluating vectors]{.heading-subtitle}
+
