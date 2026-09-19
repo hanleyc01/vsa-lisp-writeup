@@ -5,6 +5,9 @@ authors:
     affiliation: Indiana University
     roles: writing
     corresponding: true
+format:
+  html:
+    css: styles.css
 bibliography: references.bib
 ---
 
