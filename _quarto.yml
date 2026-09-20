@@ -8,8 +8,15 @@ format:
   html:
     comments:
       hypothesis: true
-  docx: default
-  jats: default
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-summary: "Show the code"
+    code-tools: true
+  # docx: default
+  # jats: default
+  # ipynb: default
+  
 
   # (other formats)
   # pdf: default

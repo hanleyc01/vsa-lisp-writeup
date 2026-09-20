@@ -1,5 +1,12 @@
 {
   "index.qmd": {
-    "index.html": "381a4b50"
+    "index.html": "381a4b50",
+    "index.docx": "32c29eb8",
+    "index.embed.ipynb": "872abdf1",
+    "index.out.ipynb": "57e8b3a7",
+    "index-preview.html": "01b80008",
+    "index.subarticle.xml": "d02ce837",
+    "index.xml": "28042ac0",
+    "index.ipynb": "56cc215d"
   }
 }
