@@ -1509,10 +1509,15 @@ class _SyntaxTransformer(_ReaderTransformer):
 
 ```
 
-- Write about the parser, and the Lark parser
-- Include lark parsing code, but do not echo it; just do some spot tests
-  to show that the parser works
-- Afterwards, we can go onto encoding
+To demonstrate that the grammar is correct, we can produce an example:
+```{python}
+#| code-fold: false
+
+from pprint import pprint
+
+pprint(parse("(define (foo bar) bar)"))
+pprint(parse("(+ 1 2)"))
+```
 
 ## Encoding {#sec-enc}
 
