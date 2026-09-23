@@ -7,6 +7,15 @@
     "index-preview.html": "01b80008",
     "index.subarticle.xml": "d02ce837",
     "index.xml": "28042ac0",
-    "index.ipynb": "56cc215d"
+    "index.ipynb": "56cc215d",
+    "index.tex": "57f10919"
+  },
+  "coding-theory.qmd": {
+    "coding-theory.embed.ipynb": "cd9c1a1e",
+    "coding-theory.out.ipynb": "914b2bad",
+    "coding-theory-preview.html": "bbc9ac71"
+  },
+  ".quarto/embed/coding-theory.embed.ipynb": {
+    "coding-theory.embed-preview.html": "32886546"
   }
 }

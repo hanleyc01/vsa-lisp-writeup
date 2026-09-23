@@ -8,6 +8,10 @@ authors:
 bibliography: references.bib
 ---
 
+::: {.callout-important}
+This writeup is currently under construction.
+:::
+
 ## Introduction
 
 Thought seems to be structured. How can networks of connected units like
@@ -59,7 +63,7 @@ where:
 1. A *pattern set* $X^{D_1 \times \dots \times D_n}$,
 2. There is a *similarity* function
 $$
-x_1 \sim x_2 : X^{D_1 \times \dots \times D_n} \times X^{D_1 \times \dots \times D_n} \to [0, 1];
+x_1 \sim x_2 : X^{D_1 \times \dots \times D_n} \times X^{D_1 \times \dots \times D_n} \to [-1, 1];
 $$
 2. There is a *binding* function,
 $$
@@ -68,10 +72,10 @@ $$
 such that $x_1 \otimes x_2$ is neither similar to $x_1$ nor $x_2$, and the binding
 operation admits an approximate inverse,
 $$
-\begin{align*}
+\begin{aligned}
     [x_1 \otimes^{-1} (x_1 \otimes x_2) \sim x_2] &\approx 1, \\
     [x_2 \otimes^{-1} (x_1 \otimes x_2) \sim x_1] &\approx 1;
-\end{align*}
+\end{aligned}
 $$
 3. And, there is a *bundling* or *superposition* operation,
 $$
@@ -104,8 +108,6 @@ import numpy.typing as npt
 
 class VSA[T: np.generic](metaclass=ABCMeta):
     """Abstract base class of all VSA implementations.
-
-    All VSAs must implement the following methods:
     """
 
     data: npt.NDArray[T]
@@ -149,6 +151,7 @@ class VSA[T: np.generic](metaclass=ABCMeta):
 
     @abstractmethod
     def __hash__(self) -> int: ...
+
 
 ```
 
@@ -376,124 +379,99 @@ class HRR(VSA[np.float64]):
             return 0.0
         else:
             return float(np.dot(x, y) / mag)
-```
 
-```{python}
-#| include: false
-from abc import update_abstractmethods
-
-
-def HRRadd__(self, rhs: HRR | float) -> Self:
-    """See `HRR.bundle`."""
-    cls = type(self)
-    if isinstance(rhs, HRR):
-        return cls(cls.bundle(self.data, rhs.data))
-    else:
-        return cls(self.data + rhs)
-
-def HRRradd__(self, rhs: HRR | float) -> Self:
-    """See `HRR.bundle`."""
-    cls = type(self)
-    if isinstance(rhs, HRR):
-        return cls(cls.bundle(self.data, rhs.data))
-    else:
-        return cls(self.data + rhs)
-
-def HRRsub__(self, rhs: HRR | float) -> Self:
-    """Element-wise subtraction."""
-    cls = type(self)
-    if isinstance(rhs, HRR):
-        return cls(self.data - rhs.data)
-    else:
-        return cls(self.data - rhs)
-
-def HRRmul__(self, rhs: HRR | float) -> Self:
-    """Scalar multiplication or `HRR.bind`."""
-    cls = type(self)
-    if isinstance(rhs, HRR):
-        return cls(cls.bind(self.data, rhs.data))
-    else:
-        return cls(self.data * rhs)
-
-def HRRrmul__(self, rhs: HRR | float) -> Self:
-    """Scalar multiplication or `HRR.bind`."""
-    cls = type(self)
-    if isinstance(rhs, HRR):
-        return cls(cls.bind(self.data, rhs.data))
-    else:
-        return cls(self.data * rhs)
-
-def HRRtruediv__(self, rhs: HRR | float) -> Self:
-    """Scalar division or `HRR.unbind`."""
-    cls = type(self)
-    if isinstance(rhs, HRR):
-        return cls(cls.unbind(self.data, rhs.data))
-    elif isinstance(rhs, int):
-        return cls(self.data / rhs)
-    else:
-        return cls((self.data / rhs).astype(np.float64))
-
-def HRRinvert__(self) -> Self:
-    """See `HRR.inv`."""
-    cls = type(self)
-    return cls(cls.inv(self.data))
-
-def HRRneg__(self) -> Self:
-    """Element-wise negation."""
-    return type(self)(-self.data)
-
-def magnitude(self) -> float:
-    """The magnitude of the raw vector."""
-    return math.sqrt(self.data @ self.data) / self.data.size
-
-def HRRmatmul__(self, other: HRR | ArrayF64) -> float | ArrayF64:
-    """Matrix multiplication."""
-    if isinstance(other, HRR):
-        return self.data @ other.data
-    else:
-        if len(other.shape) == 2:
-            return (self.data @ other).astype(np.float64)
+    @override
+    def __add__(self, rhs: VSA[np.float64] | float) -> Self:
+        """See `HRR.bundle`."""
+        cls = type(self)
+        if isinstance(rhs, VSA):
+            return cls(cls.bundle(self.data, rhs.data))
         else:
-            return self.data @ other
+            return cls(self.data + rhs)
 
-def sim(self, other: HRR | ArrayF64) -> float:
-    """See `HRR.similarity`."""
-    if isinstance(other, HRR):
-        return HRR.similarity(self.data, other.data)
-    else:
-        return HRR.similarity(self.data, other)
+    def __radd__(self, rhs: VSA[np.float64] | float) -> Self:
+        """See `HRR.bundle`."""
+        cls = type(self)
+        if isinstance(rhs, VSA):
+            return cls(cls.bundle(self.data, rhs.data))
+        else:
+            return cls(self.data + rhs)
 
-@override
-def HRRstr__(self) -> str:
-    return f"{type(self).__name__}({self.data})"
+    def __sub__(self, rhs: VSA[np.float64] | float) -> Self:
+        """Element-wise subtraction."""
+        cls = type(self)
+        if isinstance(rhs, VSA):
+            return cls(self.data - rhs.data)
+        else:
+            return cls(self.data - rhs)
 
-@override
-def HRRhash__(self) -> int:
-    return hash(self.data.tobytes())
+    @override
+    def __mul__(self, rhs: VSA[np.float64] | float) -> Self:
+        """Scalar multiplication or `HRR.bind`."""
+        cls = type(self)
+        if isinstance(rhs, VSA):
+            return cls(cls.bind(self.data, rhs.data))
+        else:
+            return cls(self.data * rhs)
 
+    def __rmul__(self, rhs: VSA[np.float64] | float) -> Self:
+        """Scalar multiplication or `HRR.bind`."""
+        cls = type(self)
+        if isinstance(rhs, VSA):
+            return cls(cls.bind(self.data, rhs.data))
+        else:
+            return cls(self.data * rhs)
 
-for _method in (
-    HRRadd__,
-    HRRradd__,
-    HRRsub__,
-    HRRmul__,
-    HRRrmul__,
-    HRRtruediv__,
-    HRRinvert__,
-    HRRneg__,
-    magnitude,
-    HRRmatmul__,
-    sim,
-    HRRstr__,
-    HRRhash__,
-):
-    name = str(_method.__name__).replace("HRR", "__")
-    print(name)
-    setattr(HRR, name, _method)
+    @override
+    def __truediv__(self, rhs: VSA[np.float64] | float) -> Self:
+        """Scalar division or `HRR.unbind`."""
+        cls = type(self)
+        if isinstance(rhs, VSA):
+            return cls(cls.unbind(self.data, rhs.data))
+        elif isinstance(rhs, int):
+            return cls(self.data / rhs)
+        else:
+            return cls((self.data / rhs).astype(np.float64))
 
-# `VSA.__hash__` is abstract, so recompute HRR's abstract methods now that
-# it has been implemented.
-_ = update_abstractmethods(HRR)
+    def __invert__(self) -> Self:
+        """See `HRR.inv`."""
+        cls = type(self)
+        return cls(cls.inv(self.data))
+
+    def __neg__(self) -> Self:
+        """Element-wise negation."""
+        return type(self)(-self.data)
+
+    def magnitude(self) -> float:
+        """The magnitude of the raw vector."""
+        return math.sqrt(self.data @ self.data) / self.data.size
+
+    def __matmul__(self, other: VSA[np.float64] | ArrayF64) -> float | ArrayF64:
+        """Matrix multiplication."""
+        if isinstance(other, VSA):
+            return self.data @ other.data
+        else:
+            if len(other.shape) == 2:
+                return (self.data @ other).astype(np.float64)
+            else:
+                return self.data @ other
+
+    @override
+    def sim(self, other: VSA[np.float64] | ArrayF64) -> float:
+        """See `HRR.similarity`."""
+        if isinstance(other, VSA):
+            return HRR.similarity(self.data, other.data)
+        else:
+            return HRR.similarity(self.data, other)
+
+    @override
+    def __str__(self) -> str:
+        return f"{type(self).__name__}({self.data})"
+
+    @override
+    def __hash__(self) -> int:
+        return hash(self.data.tobytes())
+
 ```
 
 ### Time-domain Residue Hyperdimensional Computing
@@ -772,7 +750,7 @@ the language $\mathcal{L}$ is said to be a *well-formed formula of* $\mathcal{L}
 
 To give a toy example, let us discuss the lanaguage $\mathcal{L}_\text{fruit}$.
 
-::: {#def-lang-fruit}
+::: {#exm-lang-fruit}
 Let $\mathcal{A}$ be the set of atomic symbols $\{\text{apple}, \text{banana}, \text{pear}\}$.
 Then, the language $\mathcal{L}_\text{fruit}$ is given by the following formation
 rules:
@@ -828,10 +806,10 @@ $$
 :::
 
 Since $\mathcal{L}(G)$ in @def-bnf is defined for exactly the terminal strings
-derivable from $S$, a grammar carries the clsoure property clause ((3) of @def-lang-fruit)
+derivable from $S$, a grammar carries the clsoure property clause ((3) of @exm-lang-fruit)
 for free.
 
-::: {#def-fruit-bnf}
+::: {#exm-fruit-bnf}
 
 ## Grammar of $\mathcal{L}_\text{fruit}$
 
@@ -849,27 +827,27 @@ $$
 
 3. The set of productions $P$:
 $$
-\begin{align*}
+\begin{aligned}
 P =  \{&\langle \mathbf{atomic} \rangle ::= \text{apple} \mid \text{banana} \mid \text{pear}, \\
     &\langle \mathbf{conjunction} \rangle ::= \langle \textbf{expression} \rangle \land \langle \textbf{expression}, \rangle \\
     &\langle \mathbf{disjunction} \rangle ::= \langle \textbf{expression} \rangle \lor \langle \textbf{expression}, \rangle \\
     &\langle \mathbf{expression} \rangle ::= \langle \mathbf{atomic} \rangle \mid \langle \mathbf{disjunction} \rangle \mid \langle \mathbf{conjunction} \rangle
 \}
-\end{align*}
+\end{aligned}
 $$
 
 4. The start symbol $S$ is $\langle \mathbf{expression} \rangle$.
 :::
 
-The BNF of @def-fruit-bnf can be sufficiently inferred merely from the set
+The BNF of @exm-fruit-bnf can be sufficiently inferred merely from the set
 of production rules:
 $$
-\begin{align*}
+\begin{aligned}
     \langle \mathbf{atomic} \rangle &::= \text{apple} \mid \text{banana} \mid \text{pear}, \\
     \langle \mathbf{conjunction} \rangle &::= \langle \textbf{expression} \rangle \land \langle \textbf{expression}, \rangle \\
     \langle \mathbf{disjunction} \rangle &::= \langle \textbf{expression} \rangle \lor \langle \textbf{expression}, \rangle \\
     \langle \mathbf{expression} \rangle &::= \langle \mathbf{atomic} \rangle \mid \langle \mathbf{disjunction} \rangle \mid \langle \mathbf{conjunction} \rangle
-\end{align*}
+\end{aligned}
 $$
 
 BNF grammars already conveniently give a way to easily express the grammar
@@ -913,7 +891,7 @@ in our operationalization.
 
 ### The Grammar of LISP$_\text{Plate}$
 
-Following @def-fruit-bnf, we give the grammar of LISP$_\text{Plate}$ by its
+Following @exm-fruit-bnf, we give the grammar of LISP$_\text{Plate}$ by its
 production rules alone. The rules fall into four groups: a *lexical* grammar
 that fixes the tokens, a *reader* grammar that turns a sequence of tokens into
 data, an *evaluated* subset that picks out the data which are also programs, and
@@ -922,10 +900,12 @@ subset have a start symbol for whole programs; we distinguish them by writing
 $\langle \mathbf{program\text{-}reader} \rangle$ and
 $\langle \mathbf{program\text{-}parser} \rangle$ respectively.
 
+::: {#def-lexical-grammar}
+## Lexical Grammar
 The lexical grammar assumes that the input has been lower-cased and that
 whitespace between tokens is discarded:
 $$
-\begin{align*}
+\begin{aligned}
     \langle \mathbf{token} \rangle &::= \texttt{(} \mid \texttt{)} \mid \texttt{'} \mid \texttt{`} \mid \texttt{,} \mid \texttt{.} \mid \langle \mathbf{operator} \rangle \\
         &\qquad \mid \langle \mathbf{boolean} \rangle \mid \langle \mathbf{integer} \rangle \mid \langle \mathbf{word} \rangle \\
     \langle \mathbf{operator} \rangle &::= \texttt{+} \mid \texttt{-} \mid \texttt{*} \mid \texttt{/} \\
@@ -939,14 +919,18 @@ $$
         &\qquad \mid \texttt{car} \mid \texttt{cdr} \mid \texttt{cons} \mid \texttt{nil} \mid \texttt{eq?} \mid \texttt{atom?} \mid \texttt{int?} \\
         &\qquad \mid \texttt{quote} \mid \texttt{quasiquote} \mid \texttt{unquote} \mid \texttt{begin} \\
     \langle \mathbf{identifier} \rangle &::= \langle \mathbf{word} \rangle
-\end{align*}
+\end{aligned}
 $$
 where the production for $\langle \mathbf{identifier} \rangle$ is restricted to
 those $\langle \mathbf{word} \rangle$ which are not a $\langle \mathbf{keyword} \rangle$.
 
+:::
+
+::: {#def-reader-grammar}
+## Reader Grammar
 The reader grammar is:
 $$
-\begin{align*}
+\begin{aligned}
     \langle \mathbf{program\text{-}reader} \rangle &::= \langle \mathbf{datum\text{-}seq} \rangle \\
     \langle \mathbf{datum} \rangle &::= \langle \mathbf{atom} \rangle
         \mid \texttt{(} \langle \mathbf{datum\text{-}seq} \rangle \texttt{)}
@@ -955,7 +939,7 @@ $$
         \mid \texttt{,} \langle \mathbf{datum} \rangle \\
     \langle \mathbf{datum\text{-}seq} \rangle &::= \varepsilon \mid \langle \mathbf{datum} \rangle \langle \mathbf{datum\text{-}seq} \rangle \\
     \langle \mathbf{atom} \rangle &::= \langle \mathbf{integer} \rangle \mid \langle \mathbf{boolean} \rangle \mid \langle \mathbf{word} \rangle \mid \langle \mathbf{operator} \rangle \mid \texttt{.}
-\end{align*}
+\end{aligned}
 $$
 The three prefix forms are abbreviations: the reader takes
 $\texttt{'} \langle \mathbf{datum} \rangle$ to be
@@ -964,10 +948,13 @@ $\texttt{`} \langle \mathbf{datum} \rangle$ to be
 $\texttt{(quasiquote}\ \langle \mathbf{datum} \rangle \texttt{)}$, and
 $\texttt{,} \langle \mathbf{datum} \rangle$ to be
 $\texttt{(unquote}\ \langle \mathbf{datum} \rangle \texttt{)}$.
+:::
 
+::: {#def-parser-grammar}
+## Parser Grammar
 The evaluated subset is:
 $$
-\begin{align*}
+\begin{aligned}
     \langle \mathbf{program\text{-}parser} \rangle &::= \langle \mathbf{form\text{-}seq} \rangle \\
     \langle \mathbf{form\text{-}seq} \rangle &::= \varepsilon \mid \langle \mathbf{form} \rangle \langle \mathbf{form\text{-}seq} \rangle \\
     \langle \mathbf{form} \rangle &::= \langle \mathbf{definition} \rangle \mid \langle \mathbf{expression} \rangle \\
@@ -998,12 +985,12 @@ $$
     \langle \mathbf{binary\text{-}prim} \rangle &::= \texttt{cons} \mid \texttt{eq?} \mid \texttt{and} \mid \texttt{+} \mid \texttt{-} \mid \texttt{*} \mid \texttt{/} \\
     \langle \mathbf{application} \rangle &::= \texttt{(} \langle \mathbf{expression} \rangle\ \langle \mathbf{operands} \rangle \texttt{)} \\
     \langle \mathbf{operands} \rangle &::= \varepsilon \mid \langle \mathbf{expression} \rangle \langle \mathbf{operands} \rangle
-\end{align*}
+\end{aligned}
 $$
 
 And, finally, the grammar of quasiquotation templates is:
 $$
-\begin{align*}
+\begin{aligned}
     \langle \mathbf{template} \rangle &::= \langle \mathbf{template\text{-}atom} \rangle
         \mid \texttt{(} \langle \mathbf{template\text{-}seq} \rangle \texttt{)}
         \mid \texttt{'} \langle \mathbf{template} \rangle \\
@@ -1013,10 +1000,11 @@ $$
         \mid \texttt{,} \langle \mathbf{expression} \rangle \\
     \langle \mathbf{template\text{-}seq} \rangle &::= \varepsilon \mid \langle \mathbf{template} \rangle \langle \mathbf{template\text{-}seq} \rangle \\
     \langle \mathbf{template\text{-}atom} \rangle &::= \langle \mathbf{integer} \rangle \mid \langle \mathbf{boolean} \rangle \mid \langle \mathbf{operator} \rangle \mid \texttt{.} \mid \langle \mathbf{word} \rangle
-\end{align*}
+\end{aligned}
 $$
 where the $\langle \mathbf{word} \rangle$ in the last production is restricted to
 those which are neither $\texttt{quasiquote}$ nor $\texttt{unquote}$.
+:::
 
 The reader and program parser can be operationalized as follows:
 ```{python}
@@ -1521,34 +1509,377 @@ pprint(parse("(+ 1 2)"))
 
 ## Encoding {#sec-enc}
 
-### Basics of Language Encoding
+@mccullochPitts1942 introduced the notion of a proposition being a *solution* of a network,
+and a network being a *realization* of a proposition in a simple Booelan algebra. However,
+the notions of a solution and a realization require a correspondence between
+both syntax and semantics. We will desire a proof of some kind that VSA
+networks and expressions in LISP$_\text{Plate}$ have solutions and realizations,
+but the first step is to be able to encode the syntax of LISP$_\text{Plate}$
+in VSAs, and then decode them given some assumptions. Semantics will be discussed
+in @sec-interp. 
 
-- Explain how we can encode $\mathcal{L}_\text{fruit}$
+### Basics of Language Encoding {#sec-enc-basics}
 
-### Cleanup Memory
+Recall by @def-language that a language $\mathcal{L}$ is a set of strings which
+fulfill the formation rules $S_1, S_2, \dots, S_n$. In @def-bnf, we saw
+that a language $\mathcal{L}$ can also be defined by its *grammar*. We will
+rely on a similar notion for understanding encoding.
 
-- Cleanup memory and VSA wrapper
+It should be immediately obvious that our language consists entirely of 
+S-expressions, or, nested lists [@mccarthyRecursiveFunctionsSymbolic1960].
 
-### Associative Memory
+::: {#def-sexpr}
 
-- Associative memory and VSA wrapper
+## S-Expressions; Nested Lists
 
-### Lists and Abstract Syntax
+Following @mccarthyRecursiveFunctionsSymbolic1960 [§3.a], let us have an infinite set of distinct *atomic elements* $\text{Atom}$. The
+set of *S-expressions* or *nested lists*, is the set $E$ defined by the conditions:
 
-- Talk about `VSAList`
+1. If $a \in \text{Atom}$, then $a \in E$;
+2. If $x, y \in E$, then $(x ~. y) \in E$.
+3. Nothing else is in $E$.
+4. No atom can equal a pair.
+5. $(x_1~.y_1) = (x_2~. y_2)$ iff $x_1 = x_2$ and $y_1 = y_2$.
+:::
 
-### Lambdas
+S-expressions serve as the language for expressing the syntax of every LISP;
+in our case, @def-reader-grammar serves as the grammar for a language consisting
+only of S-expressions. Whereas, @def-parser-grammar picks out only a subset
+of these S-expressions. 
 
-### Numbers {#sec-numbers}
+In order to talk about encoding, we have to reduce some seemingly redundant
+machinery. However, this machinery will provide us with the result that
+once we recursively define an encoding function that respects the constituent
+structure of the abstract syntax of LISP, this encoding function will be 
+uniquely determined for entire set of every LISP program (@cor-vsa-encoding-homomorphism).
 
-#### Peano Integer {#sec-peano-int}
+::: {#def-sig}
+## Signatures; $\Sigma$
 
-#### aTRHC Integers {#sec-atrhc-int}
+A *signature* $\Sigma$ is a set of operator symbols distinguished by arity:
+$$
+\Sigma = \Sigma_0 \cup \Sigma_1 \cup \dots
+$$
 
-#### Quoting and quasiquotation
+We call $\Sigma_0$ the set of *constants* of signature $\Sigma$.
+:::
+
+In terms of @def-bnf, these operator symbols pick out what kinds of production
+rules that a language might have, or in the case of algebraic data types,
+the set of constructors that a data type has.
+
+::: {#def-sig-lisp}
+## The Signature of LISP; $\Sigma_\text{LISP}$
+
+The signature of S-expressions is:
+
+$$
+\begin{aligned}
+\Sigma_0 &= \mathsf{Atom}, \\
+\Sigma_2 &= \{ \mathsf{cons} \}.
+\end{aligned}
+$$
+
+:::
+
+Signatures, however, do not actually refer to algebraic objects. We have
+to attach a carrier set to the signature that obeys the signatures functions;
+in other words, we need to have an algebraic structure on a set $A$ that
+corresponds with the operator symbols of a signature $\Sigma$.
+
+::: {#def-sigma-algebra}
+## $\Sigma$-algebra
+
+A *$\Sigma$-algebra* is a tuple of $\langle A, (\sigma^A)_{\sigma \in \Sigma} \rangle$ where:
+
+1. $A$ is called the *carrier set* of the $\Sigma$-algebra;
+2. For each $\sigma \in \Sigma_i$ (the set of operator symbols of arity $i$ in $\Sigma$),
+there is a function $\sigma^A : A^i \to A$. For $\sigma \in \Sigma_0$, $\sigma^A$ 
+is an element of $A$.
+:::
+
+By convention, we will refer to $\Sigma$-algebras by their set $A$. If
+we must distinguish the two, we will prefix the set with "The $\Sigma$-algebra ...".
+Otherwise, it should be clear from context.
+The $\Sigma$-algebra for some signature $\Sigma$ can be thought of
+as providing an interpretation, or, semantics of the signature $\Sigma$. 
+Signatures are such that, for every $\Sigma$, there is a kind
+of canonical $\Sigma$-algebra called the *initial algebra*. To understand initial
+algebras, first we must define *$\Sigma$-homomorphisms*:
+
+::: {#def-sigma-homomorphism}
+
+## $\Sigma$-homomorphism
+
+If $A$ and $B$ are $\Sigma$-algebras, then a *$\Sigma$-homomorphism*
+$h : A \to B$ is a function that preserves the operations of the algebra
+after mapping: i.e., for every $\sigma \in \Sigma$ with arity $n$,
+and all $a_1, \dots, a_n \in A$, it is such that:
+$$
+h \left( \sigma^A (a_1, \dots, a_n) \right) = \sigma^B \left( h(a_1), \dots, h(a_n) \right),
+$$
+and for $\sigma \in \Sigma_0$ (the constants), we have:
+$$
+h\left( \sigma^A \right) = \sigma^B
+$$
+
+:::
+
+For clarification, we must note that homomorphisms do not have the requirement
+that they are one-to-one, onto functions. With an understanding of homomorphisms,
+we can identify the canonical form of a signature:
+
+::: {#def-initial-algebra}
+
+## Initial Algebra
+
+With regards to a signature $\Sigma$, a $\Sigma$-algebra $S$ is *initial*
+iff for every $\Sigma$-algebra $A$, there is a unique homomorphism
+$$
+h_A : S \to A.
+$$
+
+:::
+
+Initial algebras are important for our inquiry here. As @goguenInitialAlgebraSemantics1977 [p. 73] notes, once we make a $A$ into
+a $\Sigma$-algebra by defining the appropriate algebraic operations, then
+immediately ("zap!") we get a homomorphism from the canonical form of the
+signature to $A$. In our case, $A$ will be the pattern set of some 
+VSA, $X^{D_1 \times \dots \times D_n}$. Not only does this apply to encoding
+languages, but also to the encoding of any abstract data type or structure
+that can be understood as a signature.
+
+::: {#def-sigma-term}
+
+## $\Sigma$-term
+
+For any signature $\Sigma$, the set of $\Sigma$-terms is the set inductively
+defined by the conditions:
+
+1. If $c \in \Sigma_0$, then $c \in T_\Sigma$;
+2. If $\sigma \in \Sigma_n$, for $n \geq 1$, and $t_1, \dots, t_n \in T_\Sigma$,then 
+$\sigma(t_1, \dots, t_n) \in T_\Sigma$.
+3. Nothing else is in $T_\Sigma$.
+
+:::
+
+::: {#def-term-algebra}
+
+## Term Algebra; $T_\Sigma$
+
+The *term algebra* of signature $\Sigma$, denoted by $T_\Sigma$, is a
+$\Sigma$-algebra with the carrier set of of $\Sigma$-terms, and whose operations
+are the term-forming operations themselves; for each $\sigma \in \Sigma_n$,
+and all $t_1, \dots, t_n \in T_\Sigma$:
+$$
+\sigma^{T_\Sigma}(t_1, \dots, t_n) = \sigma(t_1, \dots, t_n),
+$$
+and that for each $c \in \Sigma_0$, $c^{T_\Sigma} = c$,
+
+where by $\sigma(t_1, \dots, t_n)$ we mean a tree with root $\sigma$ and
+subtrees $t_1, \dots, t_n$.
+:::
+
+It is important to note that the equation in @def-term-algebra is not just 
+an example of the famous Rand Theorem (that $a = a$). Rather, the left-hand
+is an operation and the right-hand side is a term of $T_\Sigma$. The intuitive
+way to understand what $T_\Sigma$ is that it is just the set of well-formed
+expressions of a signature. Or, that it is an implementation of a
+signature that merely records that some operation was applied. $T_\Sigma$
+is a special $\Sigma$-algebra, since it is the very same canonical form,
+or, initial algebra of @def-initial-algebra.
+$T_\Sigma$ also has the property that it is free, meaning that there is 
+no confusion: distinct terms denote distinct elements, and that there
+is no junk: every element is denoted by some term.
+
+To begin, we note that if $S$ and $S'$ are initial algebras of a signature
+$\Sigma$, then $S$ and $S'$ are isomorphic [@goguenInitialAlgebraSemantics1977].
+
+::: {#thm-t-sigma-is-initial}
+
+## $T_\Sigma$ is initial
+
+For a signature $\Sigma$, $T_\Sigma$ is an initial algebra.
+:::
+
+::: {.proof}
+
+Recall by @def-initial-algebra that for any $\Sigma$-algebra $S$ to be
+an initial algebra of signature $\Sigma$, it must be that for all $\Sigma$-algebras
+$A$ that there exists a unique homomorphism $h_A : S \to A$. Further, that
+by @def-sigma-homomorphism, a homomorphism is a structure preserving map between
+$\Sigma$-algebras $B$ and $C$, $h : B \to C$, such that for every 
+$\sigma \in \Sigma_0$, $h \left( \sigma^A \right) = \sigma^B$, and for
+every $\sigma \in \Sigma$ with arity $n > 0$, and all $a_1, \dots, a_n \in A$,
+$$
+h \left ( \sigma^A(a_1, \dots, a_n) \right ) = \sigma^B(h(a_1), \dots, h(a_n)).
+$$
+
+In other words, our goal is to prove that for the term algebra $T_\Sigma$ 
+of signature $\Sigma$, that for every $\Sigma$-algebra $A$, there exists 
+a $\Sigma$-homomorphism $h_A : T_\Sigma \to A$ and that for every other $\Sigma$-homomorphism 
+$h'_A : T_\Sigma \to A$,
+$h'_A = h_A$. Intuitively, we must provide a provably unique program
+that maps every element $t \in T_\Sigma$ to $a \in A$, respecting the structure
+of $T_\Sigma$.
+
+Let $T_\Sigma$ be the term algebra of a signature $\Sigma$, and $A$ some
+$\Sigma$-algebra. Then to construct $h_A$, we proceed by induction on the 
+structure of $T_\Sigma$:
+
+**Base Case**. Let $t$ be a constant, so $t = c$ for some $c \in \Sigma_0$.
+By @def-term-algebra, $c^{T_\Sigma} = c$. By @def-sigma-algebra,
+$A$ likewise carries an element $c^A$ corresponding to $c \in \Sigma_0$.
+Since by @def-sigma-homomorphism, $h_A$ must be a $\Sigma$-homomorphism it must
+be that:
+$$
+h_A \left ( c^{T_\Sigma} \right )  := c^A.
+$$
+Since, by freeness, distinct constant symbols are distinct terms in $T_\Sigma$,
+no element in $T_\Sigma$ has more than one value in $A$.
+
+**Inductive Case**. Let $t$ be a non-constant, so a tree $\sigma(t_1, \dots, t_n) \in T_\Sigma$.
+By the inductive hypothesis, $h_A(t_i)$ is defined and uniquely determined
+for each $i = 1, \dots, n$.
+Recall that by @def-term-algebra and freeness, $t$ picks out a unique operator symbol
+$\sigma \in \Sigma_n$. By @def-sigma-algebra, $A$ too has a corresponding
+function to $\sigma$, $\sigma^A : A^n \to A$. By @def-sigma-homomorphism,
+$h_A$ must then be:
+$$
+h_A \left( \sigma(t_1, \dots, t_n) \right) := \sigma^A (h_A(t_1), \dots, h_A(t_n)).
+$$
+Furthermore, by freeness, the decomposition of $t$ as $\sigma(t_1, \dots, t_n)$
+is unique: the symbols $\sigma$, the arity $n$, and the subterms $t_1, \dots, t_n$
+are all determined by $t$. Hence, $h_A(t)$ is exactly one value.
+
+By freeness, no constant term is also a non-constant term. Further,
+by (3) of @def-sigma-term, no other elements exist in $T_{\Sigma}$, therefore
+$h_A$ is defined over all elements of $T_\Sigma$. Finally, every clause
+above is forced by @def-sigma-homomorphism. Therefore, $h_A$ is a
+homomorphism by construction, and provides a witness to the existence 
+of a $\Sigma$-homomorphism (trivially). It is also the case that $h_A$ is unique:
+for any other $\Sigma$-homomorphism $h'_A : T_\Sigma \to A$, they must also obey the conditions
+above, and therefore $h_A = h'_A$. 
+
+:::
+
+::: {#cor-lisp-algebra-is-s-expressions}
+
+## $T_{\Sigma_\text{LISP}} \cong E$
+
+The term algebra $T_{\Sigma_\text{LISP}}$ is isomorphic to the $\Sigma_\text{LISP}$-algebra
+with the carrier set $E$.
+
+:::
+
+::: {.proof}
+
+For the sake of notation, in this proof let $\Sigma = \Sigma_{\text{LISP}}$.
+To make $E$ a $\Sigma$-algebra, we have to define an appropriate
+operation $\sigma^E : E^i \to E$ for each operator symbol in $\Sigma_i$.
+$E$ already has constants $a^E$ picking out each $a \in \mathsf{Atom}$ by (1)
+of @def-sexpr. Therefore, we only
+need to define a function $\mathsf{cons}^E$,
+$$
+\mathsf{cons}^E(e_1, e_2) := (e_1~. e_2),
+$$
+which corresponds to the operator symbol $\mathsf{cons} \in \Sigma_2$.
+
+Like the proof of @thm-t-sigma-is-initial, to prove that $E$ is initial,
+we must demonstrate that for all $\Sigma$-algebras $A$ there exists a unique
+$\Sigma$-homomorphism $h_{E, A} : E \to A$. I.e., assuming some 
+$\Sigma$-algebra $A$, we must construct a unique $\Sigma$-homomorphism. 
+Proceeding via induction on the structure of $E$:
+
+**Base case**. Let $e = a^E$. By definition,
+$a^E \in E$ corresponds to some $a \in \mathsf{Atom} = \Sigma_0$.
+The $\Sigma$-algebra $A$ carries an element $a^A$ corresponding to $a$, by
+@def-sigma-algebra. Following @def-sigma-homomorphism, we must define $h_{E, A}$:
+$$
+h_{E,A}(a^E) = a^A.
+$$
+Since all atoms are distinct from one another, each atom receives exactly
+one value under $h_{E,A}(a^E)$.
+
+**Inductive case**. Let $e$ be a non-constant, so $e = (t_1~.t_2)$. By our inductive
+hypothesis, $h_{E, A}(t_1)$ and $h_{E,A}(t_2)$ are defined and uniquely determined.
+Recall that our making of $E$ a $\Sigma$-algebra, $e$ uniquely picks out
+the operator symbol $\mathsf{cons} \in \Sigma_2$, by (4) in @def-sexpr. 
+By @def-sigma-algebra, $A$ too has a function 
+$\mathsf{cons}^A: A \times A \to A$ corresponding to $\mathsf{cons} \in \Sigma_2$. By @def-sigma-homomorphism, $h_{E,A}$ must be:
+$$
+h_{E,A}\left( (t_1~. t_2) \right) := \mathsf{cons}^A\left( h_{E,A}(t_1), h_{E,A}(t_2) \right).
+$$
+Also by (5) in @def-sexpr, $h_{E,A}(e)$ has only one value.
+
+Note that by (3) of @def-sexpr no other elements exist in $E$. Further,
+$h_{E,A}$ is a homomorphism by construction. Therefore, any other
+$\Sigma$-homomorphism $h'_{E,A} : E \to A$ which is able to be constructed
+must obey the above properties, and is hence indistinct from $h_{E,A}$.
+
+All initial algebras are isomorphic, therefore, $T_{\Sigma} \cong E$.
+
+:::
+
+::: {#cor-vsa-encoding-homomorphism}
+
+## VSA Encoding
+
+Once one makes a VSA $\mathcal{V}$ a $\Sigma$-algebra by defining
+$x \in \mathbb{X}^{D_1 \times \dots \times D_n}$ and a corresponding
+operation $\mathsf{cons}^\mathcal{V} : \mathcal{V} \times \mathcal{V} \to \mathcal{V}$,
+then there is a unique homomorphism $h_{\mathcal{V}} : T_\Sigma \to X^{D_1 \times \dots \times D_n}$. 
+
+:::
+
+::: {.proof}
+
+By @thm-t-sigma-is-initial and @def-initial-algebra.
+
+:::
+
+This is the big result that the entire machinery above worked towards:
+by giving a recursive definition of how to construct constant terms
+corresponding to constants in the LISP signature; and a method for 
+$\mathsf{cons}$'ing them, then we can describe the infinite 
+LISP language. 
+
+### Cleanup Memory {#sec-enc-cleanup}
+
+<!-- - Cleanup memory and VSA wrapper -->
+
+### Associative Memory {#sec-enc-assoc}
+
+<!-- - Associative memory and VSA wrapper -->
+
+#### Lists and Abstract Syntax {#sec-enc-lists}
+
+<!-- - Talk about `VSAList` -->
+
+<!-- $$\begin{aligned}
+[\![ \texttt{(a b)} ]\!] &= [\![ \mathtt{cons}(a, \mathtt{cons}(b, \mathtt{nil})) ]\!] \\
+&= (r_{\mathtt{car}} \otimes v_a) \oplus \big(r_{\mathtt{cdr}} \otimes [\![ \mathtt{cons}(b,\mathtt{nil}) ]\!]\big) \\
+&= (r_{\mathtt{car}} \otimes v_a) \oplus \Big(r_{\mathtt{cdr}} \otimes \big((r_{\mathtt{car}} \otimes v_b) \oplus (r_{\mathtt{cdr}} \otimes v_{\mathtt{nil}})\big)\Big)
+\end{aligned}$$ -->
+
+#### Lambdas
+
+#### Numbers {#sec-numbers}
+
+##### Peano Integer {#sec-peano-int}
+
+##### aTRHC Integers {#sec-atrhc-int}
+
+#### Quoting and quasiquotation {#sec-enc-quoting}
 
 ## Interpretation {#sec-interp}
 
 ### Semantics {#sec-semantics}
 
 ### The Semantics of LISP$_\text{Plate}$
+
+## Realization and Solution
+
+## Initial Algebra for @def-parser-grammar {.appendix}
+
+## References

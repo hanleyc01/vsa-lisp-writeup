@@ -13,6 +13,7 @@ format:
     code-fold: true
     code-summary: "Show the code"
     code-tools: true
+  pdf: default
   # docx: default
   # jats: default
   # ipynb: default
